@@ -1,24 +1,48 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, {useEffect, useMemo, useState} from 'react';
+
 import './App.css';
 
+import {pokemonWithPower$, Pokemon} from "./store";
+
+const Search = () => {
+  const [search, setSearch] = useState("");
+    const [pokemon, setPokemon] = useState<Pokemon[]>([]);
+
+    useEffect(() => {
+        const sub = pokemonWithPower$.subscribe(setPokemon)
+        return () => sub.unsubscribe()
+    }, []);
+
+    const filteredPokemon = useMemo(() => {
+    return pokemon.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
+    }, [pokemon, search]);
+
+    return (
+        <div>
+            <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+            />
+            <div>
+                {filteredPokemon.map((p) => (
+                    <div key={p.name}>
+                        <strong>{p.name}</strong>-{p.power}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
 function App() {
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div
+    style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(1fr 1fr)",
+    }}>
+<Search/>
     </div>
   );
 }
