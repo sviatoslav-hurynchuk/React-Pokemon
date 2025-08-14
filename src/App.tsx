@@ -1,17 +1,36 @@
-import React, {useEffect, useMemo, useState} from 'react';
-
+import React, { useMemo, useState} from 'react';
+import {useObservableState} from "observable-hooks";
 import './App.css';
 
-import {pokemonWithPower$, Pokemon} from "./store";
+import {pokemon$, selected$, deck$} from "./store";
+
+const Deck = () => {
+    const deck = useObservableState(deck$, []);
+    return (
+        <div><h4>Deck</h4>
+        <div>
+            {deck.map((p) => (
+                <div key={p.id} style={{display: "flex"}}>
+                    <img
+                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`}
+                        alt={p.name}
+                    />
+                    <div>
+                        <div>
+                            {p.name}
+                        </div>
+                    </div>
+
+                </div>
+            ))}
+        </div>
+        </div>
+    );
+}
 
 const Search = () => {
   const [search, setSearch] = useState("");
-    const [pokemon, setPokemon] = useState<Pokemon[]>([]);
-
-    useEffect(() => {
-        const sub = pokemonWithPower$.subscribe(setPokemon)
-        return () => sub.unsubscribe()
-    }, []);
+    const pokemon = useObservableState(pokemon$, []);
 
     const filteredPokemon = useMemo(() => {
     return pokemon.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
@@ -27,6 +46,16 @@ const Search = () => {
             <div>
                 {filteredPokemon.map((p) => (
                     <div key={p.name}>
+                        <input type="checkbox"
+                        checked={p.selected}
+                               onChange={() => {
+                                   if(selected$.value.includes(p.id)) {
+                                       selected$.next(selected$.value.filter((id) => id !== p.id));
+                                   }else {
+                                       selected$.next([...selected$.value, p.id]);
+                                   }
+                               }}
+                        />
                         <strong>{p.name}</strong>-{p.power}
                     </div>
                 ))}
@@ -40,9 +69,10 @@ function App() {
     <div
     style={{
         display: "grid",
-        gridTemplateColumns: "repeat(1fr 1fr)",
+        gridTemplateColumns: "1fr 1fr",
     }}>
-<Search/>
+<Search />
+<Deck />
     </div>
   );
 }
