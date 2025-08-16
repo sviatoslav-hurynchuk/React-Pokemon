@@ -1,10 +1,12 @@
-import React, { useMemo, useState} from 'react';
+import React, { useMemo } from 'react';
 import {useObservableState} from "observable-hooks";
 import './App.css';
+import {BehaviorSubject, combineLatestWith, map} from "rxjs";
 
-import {pokemon$, selected$, deck$} from "./store";
+import {usePokemon, PokemonProvider} from "./store";
 
 const Deck = () => {
+    const {deck$} = usePokemon();
     const deck = useObservableState(deck$, []);
     return (
         <div><h4>Deck</h4>
@@ -29,19 +31,27 @@ const Deck = () => {
 }
 
 const Search = () => {
-  const [search, setSearch] = useState("");
-    const pokemon = useObservableState(pokemon$, []);
+    const {pokemon$, selected$} = usePokemon();
+const search$ = useMemo(() => new BehaviorSubject(""), []);
 
-    const filteredPokemon = useMemo(() => {
-    return pokemon.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
-    }, [pokemon, search]);
+const [filteredPokemon] = useObservableState(() =>
+pokemon$.pipe(
+    combineLatestWith(search$),
+    map(([pokemon, search]) =>
+        pokemon.filter((p) =>
+            p.name.toLowerCase().includes(search.toLowerCase())
+        )
+        )
+    ),
+    []
+);
 
     return (
         <div>
             <input
                 type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={search$.value}
+                onChange={(e) => search$.next(e.target.value)}
             />
             <div>
                 {filteredPokemon.map((p) => (
@@ -64,9 +74,9 @@ const Search = () => {
     );
 }
 function App() {
-
   return (
-    <div
+      <PokemonProvider>
+      <div
     style={{
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
@@ -74,6 +84,7 @@ function App() {
 <Search />
 <Deck />
     </div>
+    </PokemonProvider>
   );
 }
 
